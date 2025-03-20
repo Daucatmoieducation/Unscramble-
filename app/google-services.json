@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "913429606305",
+    "firebase_url": "https://unscramble-7f80f-default-rtdb.firebaseio.com",
+    "project_id": "unscramble-7f80f",
+    "storage_bucket": "unscramble-7f80f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:913429606305:android:d85f84d4fa07f12b0ae5e0",
+        "android_client_info": {
+          "package_name": "com.example.unscramble"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzQlF_M5I4Nu5hcOAkk0Ucqqu4qJFC0bo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
