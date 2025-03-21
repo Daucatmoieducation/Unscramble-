@@ -37,7 +37,13 @@ class GameViewModel : ViewModel() {
      */
     fun resetGame() {
         usedWords.clear()
-        _uiState.value = GameUiState(currentScrambledWord = pickRandomWordAndShuffle())
+        val firstScrambledWord = pickRandomWordAndShuffle() // Lấy từ đầu tiên
+        val firstWordMeaning = allWords[currentWord] ?: ""  // Lấy nghĩa của từ đầu tiên
+
+        _uiState.value = GameUiState(
+            currentScrambledWord = firstScrambledWord,
+            currentWordMeaning = firstWordMeaning
+        )
     }
 
     /*
@@ -81,8 +87,11 @@ class GameViewModel : ViewModel() {
      * current game state.
      */
     private fun updateGameState(updatedScore: Int) {
-        if (usedWords.size == MAX_NO_OF_WORDS){
-            //Last round in the game, update isGameOver to true, don't pick a new word
+        val nextScrambledWord = pickRandomWordAndShuffle() // Chọn từ mới và cập nhật currentWord
+        val nextWordMeaning = allWords[currentWord] ?: ""  // Lấy nghĩa của từ mới đã chọn
+
+        if (usedWords.size == MAX_NO_OF_WORDS) {
+            // Last round in the game, update isGameOver to true, don't pick a new word
             _uiState.update { currentState ->
                 currentState.copy(
                     isGuessedWordWrong = false,
@@ -90,18 +99,20 @@ class GameViewModel : ViewModel() {
                     isGameOver = true
                 )
             }
-        } else{
+        } else {
             // Normal round in the game
             _uiState.update { currentState ->
                 currentState.copy(
                     isGuessedWordWrong = false,
-                    currentScrambledWord = pickRandomWordAndShuffle(),
+                    currentScrambledWord = nextScrambledWord,
+                    currentWordMeaning = nextWordMeaning,  // Hiển thị nghĩa đúng
                     currentWordCount = currentState.currentWordCount.inc(),
                     score = updatedScore
                 )
             }
         }
     }
+
 
     private fun shuffleCurrentWord(word: String): String {
         val tempWord = word.toCharArray()
@@ -113,14 +124,23 @@ class GameViewModel : ViewModel() {
         return String(tempWord)
     }
 
+//    private fun pickRandomWordAndShuffle(): String {
+//        // Continue picking up a new random word until you get one that hasn't been used before
+//        currentWord = allWords.random()
+//        return if (usedWords.contains(currentWord)) {
+//            pickRandomWordAndShuffle()
+//        } else {
+//            usedWords.add(currentWord)
+//            shuffleCurrentWord(currentWord)
+//        }
+//    }
     private fun pickRandomWordAndShuffle(): String {
-        // Continue picking up a new random word until you get one that hasn't been used before
-        currentWord = allWords.random()
-        return if (usedWords.contains(currentWord)) {
-            pickRandomWordAndShuffle()
-        } else {
-            usedWords.add(currentWord)
-            shuffleCurrentWord(currentWord)
-        }
+        val unusedWords = allWords.keys - usedWords  // Lấy danh sách từ chưa dùng
+        if (unusedWords.isEmpty()) return "" // Tránh lỗi khi hết từ
+
+        currentWord = unusedWords.random() // Chọn từ ngẫu nhiên
+        usedWords.add(currentWord) // Đánh dấu từ đã dùng
+        return shuffleCurrentWord(currentWord) // Trả về từ đã xáo trộn
     }
+
 }
