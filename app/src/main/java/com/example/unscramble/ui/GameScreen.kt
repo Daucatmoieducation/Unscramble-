@@ -51,12 +51,13 @@ import com.example.unscramble.ui.theme.UnscrambleTheme
 
 @Composable
 fun GameScreen(
-    difficulty: GameDifficulty = GameDifficulty.EASY,
     modifier: Modifier = Modifier
 ) {
     val gameViewModel: GameViewModel = viewModel()
     val gameUiState by gameViewModel.uiState.collectAsState()
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
+    val difficulty: GameDifficulty = gameUiState.typeGame
+
 
     Column(
         modifier = modifier

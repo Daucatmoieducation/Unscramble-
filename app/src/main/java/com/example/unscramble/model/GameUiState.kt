@@ -8,6 +8,7 @@ data class GameUiState(
     val isGuessedWordWrong: Boolean = false,
     val isGameOver: Boolean = false,
     val remainingTime: Int = 15,
+    val typeGame: GameDifficulty = GameDifficulty.EASY
 )
 
 enum class GameDifficulty {
