@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -39,7 +40,6 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") } // Lưu trữ thông báo lỗi
-    val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
     Column(
@@ -72,6 +72,11 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done
             ),
+            keyboardOptionDone = {
+                Login(email, password, auth, navController) { errorText ->
+                    errorMessage = errorText
+                }
+            },
             isPassword = true
         )
 
@@ -82,58 +87,70 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
 
         // Login button
         OutlinedButton(onClick = {
-            if (email.isEmpty() || password.isEmpty()) {
-                errorMessage = "Email hoặc mật khẩu không thể để trống"
-                return@OutlinedButton
+            Login(email, password, auth, navController) { errorText ->
+                errorMessage = errorText
             }
-
-            // Reset lỗi khi người dùng nhấn nút đăng nhập
-            errorMessage = ""
-
-            auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val user: FirebaseUser? = auth.currentUser
-                        navController.navigate("game_screen")
-                    } else {
-                        // Xử lý lỗi khi đăng nhập thất bại
-                        val exception = task.exception
-                        val errorText = when (exception) {
-                            is FirebaseAuthInvalidCredentialsException -> {
-                                "Sai email hoặc mật khẩu. Vui lòng thử lại."
-                            }
-                            is FirebaseAuthUserCollisionException -> {
-                                "Tài khoản này đã tồn tại."
-                            }
-                            is FirebaseAuthInvalidUserException -> {
-                                "Không tìm thấy tài khoản này. Vui lòng kiểm tra lại email."
-                            }
-                            is FirebaseAuthEmailException -> {
-                                "Email không hợp lệ. Vui lòng nhập lại."
-                            }
-                            is FirebaseNetworkException -> {
-                                "Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối mạng."
-                            }
-                            else -> {
-                                "Đã xảy ra lỗi, vui lòng thử lại sau."
-                            }
-                        }
-                        errorMessage = errorText
-                        Log.e("LoginError", "Error: $errorText")
-                    }
-                }
         }) {
-            Text(stringResource(R.string.login),modifier = Modifier.padding(top = 5.dp))
+            Text(stringResource(R.string.login), modifier = Modifier.padding(top = 5.dp))
         }
     }
 }
 
+private fun Login(
+    email: String,
+    password: String,
+    auth: FirebaseAuth,
+    navController: NavController,
+    onError: (String) -> Unit
+) {
+    if (email.isEmpty() || password.isEmpty()) {
+        onError("Email hoặc mật khẩu không thể để trống")
+        return
+    }
+
+    // Reset lỗi khi người dùng nhấn nút đăng nhập
+    onError("")
+
+    auth.signInWithEmailAndPassword(email, password)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val user: FirebaseUser? = auth.currentUser
+                navController.navigate("game_screen")
+            } else {
+                // Xử lý lỗi khi đăng nhập thất bại
+                val exception = task.exception
+                val errorText = when (exception) {
+                    is FirebaseAuthInvalidCredentialsException -> {
+                        "Sai email hoặc mật khẩu. Vui lòng thử lại."
+                    }
+                    is FirebaseAuthUserCollisionException -> {
+                        "Tài khoản này đã tồn tại."
+                    }
+                    is FirebaseAuthInvalidUserException -> {
+                        "Không tìm thấy tài khoản này. Vui lòng kiểm tra lại email."
+                    }
+                    is FirebaseAuthEmailException -> {
+                        "Email không hợp lệ. Vui lòng nhập lại."
+                    }
+                    is FirebaseNetworkException -> {
+                        "Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại kết nối mạng."
+                    }
+                    else -> {
+                        "Đã xảy ra lỗi, vui lòng thử lại sau."
+                    }
+                }
+                onError(errorText)
+                Log.e("LoginError", "Error: $errorText")
+            }
+        }
+}
 
 @Composable
 fun GetTextField(
     value: String,
     label: String,
     onValueChanged: (String) -> Unit,
+    keyboardOptionDone: ()->Unit = {},
     keyboardOption: KeyboardOptions,
     isPassword: Boolean = false,
     modifier: Modifier = Modifier
@@ -143,6 +160,9 @@ fun GetTextField(
         onValueChange = onValueChanged,
         label = { Text(label) },
         keyboardOptions = keyboardOption,
+        keyboardActions = KeyboardActions(
+          onDone = {keyboardOptionDone()}
+        ),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
         modifier = modifier.padding(vertical = 5.dp)
             .width(300.dp)

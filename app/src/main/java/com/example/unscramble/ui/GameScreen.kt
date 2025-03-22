@@ -4,11 +4,13 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
@@ -19,6 +21,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
@@ -34,8 +39,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -74,6 +81,14 @@ fun GameScreen(
                 modifier = Modifier.padding(mediumPadding)
             )
         }
+        if (gameUiState.hintNumbers>0){
+            AssistanceBar(
+                usedHint = {gameViewModel.useHint()},
+                hintNumber = gameUiState.hintNumbers,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = mediumPadding)
+            )
+        }
         GameLayout(
             onUserGuessChanged = { gameViewModel.updateUserGuess(it) },
             wordCount = gameUiState.currentWordCount,
@@ -82,10 +97,11 @@ fun GameScreen(
             currentScrambledWord = gameUiState.currentScrambledWord,
             wordMeaning = gameUiState.currentWordMeaning,
             isGuessWrong = gameUiState.isGuessedWordWrong,
+            hint = gameUiState.hint,
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(mediumPadding)
+                .padding(bottom = mediumPadding, start = mediumPadding,end = mediumPadding)
         )
         Column(
             modifier = Modifier
@@ -128,6 +144,41 @@ fun GameScreen(
 }
 
 @Composable
+fun AssistanceBar(
+    hintNumber: Int,
+    usedHint: ()->Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.padding(bottom = 5.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = "${hintNumber}x",style = typography.titleLarge,)
+        AssistanceIcon(onClicked = usedHint)
+    }
+}
+
+
+@Composable
+fun AssistanceIcon(
+    onClicked: ()->Unit,
+    modifier: Modifier = Modifier
+){
+
+    IconButton(
+        onClick = onClicked,
+        modifier = modifier.size(50.dp)
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.baseline_lightbulb_24),
+            contentDescription = "Help",
+            tint = Color.Unspecified,
+        )
+    }
+}
+
+@Composable
 fun GameStatus(score: Int, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
@@ -141,6 +192,7 @@ fun GameStatus(score: Int, modifier: Modifier = Modifier) {
     }
 }
 
+
 @Composable
 fun GameLayout(
     currentScrambledWord: String,
@@ -150,6 +202,7 @@ fun GameLayout(
     userGuess: String,
     onUserGuessChanged: (String) -> Unit,
     onKeyboardDone: () -> Unit,
+    hint: String,
     modifier: Modifier = Modifier
 ) {
     val gameViewModel: GameViewModel = viewModel()
@@ -173,7 +226,7 @@ fun GameLayout(
             ) {
                 GameStatus(
                     score = gameUiState.score,
-                    modifier = Modifier.weight(1f) // Đẩy về trái
+                    modifier = Modifier.weight(1f)
                 )
 
                 Text(
@@ -197,6 +250,10 @@ fun GameLayout(
                 textAlign = TextAlign.Center,
                 style = typography.titleMedium
             )
+            Text(
+                text = hint,
+            )
+
             OutlinedTextField(
                 value = userGuess,
                 singleLine = true,
@@ -266,6 +323,8 @@ private fun FinalScoreDialog(
         }
     )
 }
+
+
 
 @Preview(showBackground = true)
 @Composable

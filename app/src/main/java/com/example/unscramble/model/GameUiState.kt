@@ -8,8 +8,11 @@ data class GameUiState(
     val isGuessedWordWrong: Boolean = false,
     val isGameOver: Boolean = false,
     val remainingTime: Int = 15,
-    val typeGame: GameDifficulty = GameDifficulty.EASY
+    val hint: String = "",
+    val hintNumbers: Int = 3,
+    val typeGame: GameDifficulty = GameDifficulty.MEDIUM
 )
+
 
 enum class GameDifficulty {
     EASY,

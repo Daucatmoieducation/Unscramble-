@@ -33,19 +33,25 @@ class GameViewModel : ViewModel() {
     init {
         resetGame()
     }
-
     //fun
+    fun usedTime(){
+        if (_uiState.value.typeGame != GameDifficulty.EASY) {
+            startTime()
+        }
+    }
+
     fun resetGame() {
         usedWords.clear()
         val firstScrambledWord = pickRandomWordAndShuffle()
-        val firstWordMeaning = allWords[currentWord] ?: ""
+        val firstWordMeaning = allWords.find { it.word == currentWord }?.meaning ?: ""
 
         _uiState.value = GameUiState(
             currentScrambledWord = firstScrambledWord,
             currentWordMeaning = firstWordMeaning,
+            hintNumbers = 3,
             typeGame = _uiState.value.typeGame
         )
-        useTime()
+        usedTime()
     }
 
     fun updateUserGuess(guessedWord: String){
@@ -64,17 +70,17 @@ class GameViewModel : ViewModel() {
             }
             val updatedScore = _uiState.value.score.plus(SCORE_INCREASE).plus(bonusScore)
             updateGameState(updatedScore)
-            useTime()
+            usedTime()
         }
         else if(isTimeOut &&userGuess.equals(currentWord, ignoreCase = true) ){
             val updatedScore = _uiState.value.score.plus(SCORE_INCREASE)
             updateGameState(updatedScore)
-            useTime()
+            usedTime()
         }
         else if(isTimeOut &&!(userGuess.equals(currentWord, ignoreCase = true)) ){
             val updatedScore = _uiState.value.score
             updateGameState(updatedScore)
-            useTime()
+            usedTime()
         }
         else {
             _uiState.update { currentState ->
@@ -89,7 +95,7 @@ class GameViewModel : ViewModel() {
     fun skipWord() {
         updateGameState(_uiState.value.score)
         updateUserGuess("")
-        useTime()
+        usedTime()
     }
 
     fun pauseGame(){
@@ -110,11 +116,31 @@ class GameViewModel : ViewModel() {
         }
     }
 
-    fun useTime(){
-        if (_uiState.value.typeGame != GameDifficulty.EASY) {
-            startTime()
+
+
+    fun generateHint(): String {
+        val word = currentWord
+        val revealCount = (word.length * 0.6).toInt() // 60% số ký tự
+        val revealedIndexes = word.indices.shuffled().take(revealCount).toSet()
+
+        return word.mapIndexed { index, char ->
+            if (index in revealedIndexes) char else '_'
+        }.joinToString("")
+    }
+
+    fun useHint() {
+        _uiState.update { currentState ->
+            if (currentState.hintNumbers > 0) {
+                currentState.copy(
+                    hint = generateHint(),
+                    hintNumbers = currentState.hintNumbers - 1
+                )
+            } else {
+                currentState
+            }
         }
     }
+
 
     //end fun
 
@@ -124,12 +150,13 @@ class GameViewModel : ViewModel() {
                 currentState.copy(
                     isGuessedWordWrong = false,
                     score = updatedScore,
-                    isGameOver = true
+                    isGameOver = true,
+                    hint = ""
                 )
             }
         } else {
             val nextScrambledWord = pickRandomWordAndShuffle()
-            val nextWordMeaning = allWords[currentWord] ?: ""
+            val nextWordMeaning = allWords.find { it.word == currentWord }?.meaning ?: ""
 
             _uiState.update { currentState ->
                 currentState.copy(
@@ -137,7 +164,8 @@ class GameViewModel : ViewModel() {
                     currentScrambledWord = nextScrambledWord,
                     currentWordMeaning = nextWordMeaning,
                     currentWordCount = currentState.currentWordCount + 1,
-                    score = updatedScore
+                    score = updatedScore,
+                    hint = ""
                 )
             }
         }
@@ -155,11 +183,13 @@ class GameViewModel : ViewModel() {
     }
 
     private fun pickRandomWordAndShuffle(): String {
-        val unusedWords = allWords.keys - usedWords  // Lấy danh sách từ chưa dùng
-        if (unusedWords.isEmpty()) return "" // Tránh lỗi khi hết từ
+        val unusedWords = allWords.filter { it.word !in usedWords }
+        if (unusedWords.isEmpty()) return ""
 
-        currentWord = unusedWords.random() // Chọn từ ngẫu nhiên
-        usedWords.add(currentWord) // Đánh dấu từ đã dùng
-        return shuffleCurrentWord(currentWord) // Trả về từ đã xáo trộn
+        val selectedWord = unusedWords.random()
+        currentWord = selectedWord.word
+        usedWords.add(currentWord)
+
+        return shuffleCurrentWord(currentWord)
     }
 }
