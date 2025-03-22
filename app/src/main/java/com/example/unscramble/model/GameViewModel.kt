@@ -1,5 +1,6 @@
 package com.example.unscramble.model
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -41,6 +42,7 @@ class GameViewModel : ViewModel() {
     }
 
     fun resetGame() {
+        Log.d("GameViewModel", "resetGame: typeGame before reset = ${_uiState.value.typeGame}")
         usedWords.clear()
         val firstScrambledWord = pickRandomWordAndShuffle()
         val firstWordMeaning = allWords.find { it.word == currentWord }?.meaning ?: ""
@@ -49,9 +51,11 @@ class GameViewModel : ViewModel() {
             currentScrambledWord = firstScrambledWord,
             currentWordMeaning = firstWordMeaning,
             hintNumbers = 3,
-            typeGame = _uiState.value.typeGame
+            typeGame = uiState.value.typeGame,
         )
+        Log.d("GameViewModel", "resetGame: ${_uiState.value.typeGame}")
         usedTime()
+
     }
 
     fun updateUserGuess(guessedWord: String){
@@ -141,6 +145,16 @@ class GameViewModel : ViewModel() {
         }
     }
 
+    fun chosenType(gameDifficulty: GameDifficulty){
+        _uiState.update { currentState->
+            currentState.copy(
+                typeGame = gameDifficulty
+            )
+        }
+        Log.d("GameViewModel", "chosenType: ${gameDifficulty}")
+        Log.d("GameViewModel", "Current gameType after update: $uiState.value.typeGame")
+        resetGame()
+    }
 
     //end fun
 
@@ -151,7 +165,7 @@ class GameViewModel : ViewModel() {
                     isGuessedWordWrong = false,
                     score = updatedScore,
                     isGameOver = true,
-                    hint = ""
+                    hint = "",
                 )
             }
         } else {
@@ -165,7 +179,7 @@ class GameViewModel : ViewModel() {
                     currentWordMeaning = nextWordMeaning,
                     currentWordCount = currentState.currentWordCount + 1,
                     score = updatedScore,
-                    hint = ""
+                    hint = "",
                 )
             }
         }

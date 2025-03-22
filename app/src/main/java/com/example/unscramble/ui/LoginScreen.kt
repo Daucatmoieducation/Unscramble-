@@ -115,7 +115,7 @@ private fun Login(
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val user: FirebaseUser? = auth.currentUser
-                navController.navigate("game_screen")
+                navController.navigate("home_screen")
             } else {
                 // Xử lý lỗi khi đăng nhập thất bại
                 val exception = task.exception

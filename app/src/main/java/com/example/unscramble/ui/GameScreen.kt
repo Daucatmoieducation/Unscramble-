@@ -1,10 +1,8 @@
 package com.example.unscramble.ui
 
-import android.annotation.SuppressLint
-import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,7 +21,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
@@ -40,31 +37,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.unscramble.R
 import com.example.unscramble.model.GameDifficulty
 import com.example.unscramble.model.GameViewModel
 import com.example.unscramble.model.TimerBar
-import com.example.unscramble.ui.theme.UnscrambleTheme
 
 @Composable
 fun GameScreen(
+    navController: NavController,
+    gameViewModel: GameViewModel,
     modifier: Modifier = Modifier
-) {
-    val gameViewModel: GameViewModel = viewModel()
-    val gameUiState by gameViewModel.uiState.collectAsState()
-    val mediumPadding = dimensionResource(R.dimen.padding_medium)
-    val difficulty: GameDifficulty = gameUiState.typeGame
 
+) {
+    val gameUiState by gameViewModel.uiState.collectAsState()
+    val difficulty: GameDifficulty =gameUiState.typeGame
+    val mediumPadding = dimensionResource(R.dimen.padding_medium)
 
     Column(
         modifier = modifier
@@ -75,6 +71,7 @@ fun GameScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(text = "Chế độ: ${gameUiState.typeGame}")
         if (difficulty != GameDifficulty.EASY) {
             TimerBar(
                 remainingTime = gameUiState.remainingTime,
@@ -137,7 +134,8 @@ fun GameScreen(
             FinalScoreDialog(
                 score = gameUiState.score,
                 onPlayAgain = { gameViewModel.resetGame() },
-                pauseGame = {gameViewModel.pauseGame()}
+                pauseGame = {gameViewModel.pauseGame()},
+                navController = navController
             )
         }
     }
@@ -286,31 +284,26 @@ fun GameLayout(
 
 
 //show score
-@SuppressLint("ContextCastToActivity")
 @Composable
 private fun FinalScoreDialog(
     score: Int,
     onPlayAgain: () -> Unit,
-    pauseGame:()->Unit,
+    pauseGame: () -> Unit,
+    navController: NavController,
     modifier: Modifier = Modifier
 ) {
-    val activity = (LocalContext.current as Activity)
     LaunchedEffect(Unit) {
         pauseGame()
     }
     AlertDialog(
-        onDismissRequest = {
-            // Dismiss the dialog when the user clicks outside the dialog or on the back
-            // button. If you want to disable that functionality, simply use an empty
-            // onCloseRequest.
-        },
+        onDismissRequest = {},
         title = { Text(text = stringResource(R.string.congratulations)) },
         text = { Text(text = stringResource(R.string.you_scored, score)) },
         modifier = modifier,
         dismissButton = {
             TextButton(
                 onClick = {
-                    activity.finish()
+                    navController.popBackStack("home_screen", false) // Quay về HomeScreen
                 }
             ) {
                 Text(text = stringResource(R.string.exit))
@@ -325,11 +318,12 @@ private fun FinalScoreDialog(
 }
 
 
-
-@Preview(showBackground = true)
-@Composable
-fun GameScreenPreview() {
-    UnscrambleTheme {
-        GameScreen()
-    }
-}
+//
+//@Preview(showBackground = true)
+//@Composable
+//fun GameScreenPreview() {
+//    UnscrambleTheme {
+//        val navController = rememberNavController()
+//        GameScreen(navController)
+//    }
+//}
