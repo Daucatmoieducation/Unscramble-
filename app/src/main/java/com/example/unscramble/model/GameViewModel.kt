@@ -1,40 +1,39 @@
-package com.example.unscramble.ui
+package com.example.unscramble.model
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.unscramble.data.MAX_NO_OF_WORDS
 import com.example.unscramble.data.SCORE_INCREASE
 import com.example.unscramble.data.allWords
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-/**
- * ViewModel containing the app data and methods to process the data
- */
+
 class GameViewModel : ViewModel() {
 
-    // Game UI state
     private val _uiState = MutableStateFlow(GameUiState())
     val uiState: StateFlow<GameUiState> = _uiState.asStateFlow()
 
     var userGuess by mutableStateOf("")
         private set
 
-    // Set of words used in the game
     private var usedWords: MutableSet<String> = mutableSetOf()
     private lateinit var currentWord: String
-
+    private var timerJob: Job? = null
+    private var isTimeOut: Boolean = false
     init {
         resetGame()
     }
 
-    /*
-     * Re-initializes the game data to restart the game.
-     */
+    //fun
     fun resetGame() {
         usedWords.clear()
         val firstScrambledWord = pickRandomWordAndShuffle() // Lấy từ đầu tiên
@@ -44,54 +43,68 @@ class GameViewModel : ViewModel() {
             currentScrambledWord = firstScrambledWord,
             currentWordMeaning = firstWordMeaning
         )
+        startTime()
     }
 
-    /*
-     * Update the user's guess
-     */
     fun updateUserGuess(guessedWord: String){
         userGuess = guessedWord
     }
 
-    /*
-     * Checks if the user's guess is correct.
-     * Increases the score accordingly.
-     */
+
     fun checkUserGuess() {
+//        timerJob?.cancel()
         if (userGuess.equals(currentWord, ignoreCase = true)) {
-            // User's guess is correct, increase the score
-            // and call updateGameState() to prepare the game for next round
+
             val updatedScore = _uiState.value.score.plus(SCORE_INCREASE)
             updateGameState(updatedScore)
-        } else {
-            // User's guess is wrong, show an error
+            startTime()
+        }
+        else if(isTimeOut &&userGuess.equals(currentWord, ignoreCase = true) ){
+            val updatedScore = _uiState.value.score.plus(SCORE_INCREASE)
+            updateGameState(updatedScore)
+            startTime()
+        }
+        else if(isTimeOut &&!(userGuess.equals(currentWord, ignoreCase = true)) ){
+            val updatedScore = _uiState.value.score
+            updateGameState(updatedScore)
+            startTime()
+        }
+        else {
             _uiState.update { currentState ->
                 currentState.copy(isGuessedWordWrong = true)
             }
         }
-        // Reset user guess
         updateUserGuess("")
+//        startTime()
+        isTimeOut = false
     }
 
-    /*
-     * Skip to next word
-     */
     fun skipWord() {
         updateGameState(_uiState.value.score)
-        // Reset user guess
         updateUserGuess("")
+        startTime()
     }
 
-    /*
-     * Picks a new currentWord and currentScrambledWord and updates UiState according to
-     * current game state.
-     */
-    private fun updateGameState(updatedScore: Int) {
-        val nextScrambledWord = pickRandomWordAndShuffle() // Chọn từ mới và cập nhật currentWord
-        val nextWordMeaning = allWords[currentWord] ?: ""  // Lấy nghĩa của từ mới đã chọn
+    fun startTime(){
+        timerJob?.cancel()
 
+        timerJob = viewModelScope.launch {
+            for (time in 10 downTo 0) {
+                _uiState.update { it.copy(remainingTime = time) }
+                delay(1000L) // Chờ 1 giây
+            }
+            isTimeOut = true
+            checkUserGuess()
+        }
+    }
+
+    //end fun
+
+    private fun updateGameState(updatedScore: Int) {
+        val nextScrambledWord = pickRandomWordAndShuffle()
+        val nextWordMeaning = allWords[currentWord] ?: ""
         if (usedWords.size == MAX_NO_OF_WORDS) {
-            // Last round in the game, update isGameOver to true, don't pick a new word
+
             _uiState.update { currentState ->
                 currentState.copy(
                     isGuessedWordWrong = false,
@@ -124,16 +137,6 @@ class GameViewModel : ViewModel() {
         return String(tempWord)
     }
 
-//    private fun pickRandomWordAndShuffle(): String {
-//        // Continue picking up a new random word until you get one that hasn't been used before
-//        currentWord = allWords.random()
-//        return if (usedWords.contains(currentWord)) {
-//            pickRandomWordAndShuffle()
-//        } else {
-//            usedWords.add(currentWord)
-//            shuffleCurrentWord(currentWord)
-//        }
-//    }
     private fun pickRandomWordAndShuffle(): String {
         val unusedWords = allWords.keys - usedWords  // Lấy danh sách từ chưa dùng
         if (unusedWords.isEmpty()) return "" // Tránh lỗi khi hết từ

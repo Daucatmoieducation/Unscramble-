@@ -21,7 +21,8 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    AppNavigation()
+//                    AppNavigation()
+                    GameScreen()
                 }
             }
         }

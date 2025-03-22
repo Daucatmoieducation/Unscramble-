@@ -5,7 +5,6 @@ import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -43,10 +42,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unscramble.R
+import com.example.unscramble.model.GameViewModel
+import com.example.unscramble.model.TimerBar
 import com.example.unscramble.ui.theme.UnscrambleTheme
 
 @Composable
-fun GameScreen(gameViewModel: GameViewModel = viewModel(),modifier: Modifier = Modifier) {
+fun GameScreen(gameViewModel: GameViewModel = viewModel(), modifier: Modifier = Modifier) {
     val gameUiState by gameViewModel.uiState.collectAsState()
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
 
@@ -60,10 +61,8 @@ fun GameScreen(gameViewModel: GameViewModel = viewModel(),modifier: Modifier = M
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Text(
-            text = stringResource(R.string.app_name),
-            style = typography.titleLarge,
-        )
+        TimerBar(remainingTime = gameUiState.remainingTime, modifier = Modifier.padding(mediumPadding))
+
         GameLayout(
             onUserGuessChanged = { gameViewModel.updateUserGuess(it) },
             wordCount = gameUiState.currentWordCount,
@@ -202,6 +201,7 @@ fun GameLayout(
         }
     }
 }
+
 
 /*
  * Creates and shows an AlertDialog with final score.

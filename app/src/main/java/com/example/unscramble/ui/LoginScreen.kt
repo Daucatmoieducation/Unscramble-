@@ -20,16 +20,19 @@ import com.google.firebase.auth.FirebaseUser
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuthEmailException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.example.unscramble.R
 
 @Composable
 fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
@@ -45,12 +48,17 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Email TextField
+        Text(
+            text = stringResource(R.string.login),
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 5.dp)
+        )
         GetTextField(
             value = email,
             onValueChanged = { email = it },
             label = "Nhập email",
             keyboardOption = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Text,
+                keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             )
         )
@@ -111,12 +119,11 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
                             }
                         }
                         errorMessage = errorText
-                        Toast.makeText(context, errorText, Toast.LENGTH_SHORT).show()
                         Log.e("LoginError", "Error: $errorText")
                     }
                 }
         }) {
-            Text("Login")
+            Text(stringResource(R.string.login),modifier = Modifier.padding(top = 5.dp))
         }
     }
 }
@@ -141,12 +148,13 @@ fun GetTextField(
             .width(300.dp)
     )
 }
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun DemoPreview() {
-//    UnscrambleTheme {
-//        LoginScreen()
-//    }
-//}
+
+@Preview(showBackground = true)
+@Composable
+fun DemoPreview() {
+    UnscrambleTheme {
+        val navController = rememberNavController()
+        LoginScreen(navController = navController)
+    }
+}
 
