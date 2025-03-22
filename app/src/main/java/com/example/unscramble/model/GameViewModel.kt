@@ -51,7 +51,7 @@ class GameViewModel : ViewModel() {
             currentScrambledWord = firstScrambledWord,
             currentWordMeaning = firstWordMeaning,
             hintNumbers = 3,
-            typeGame = uiState.value.typeGame,
+            typeGame = _uiState.value.typeGame,
         )
         Log.d("GameViewModel", "resetGame: ${_uiState.value.typeGame}")
         usedTime()

@@ -86,6 +86,7 @@ fun GameScreen(
                     .padding(horizontal = mediumPadding)
             )
         }
+        Log.d("GameScreen", "Recomposing GameScreen: score = ${gameUiState.score}")
         GameLayout(
             onUserGuessChanged = { gameViewModel.updateUserGuess(it) },
             wordCount = gameUiState.currentWordCount,
@@ -95,6 +96,7 @@ fun GameScreen(
             wordMeaning = gameUiState.currentWordMeaning,
             isGuessWrong = gameUiState.isGuessedWordWrong,
             hint = gameUiState.hint,
+            score = gameUiState.score,
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
@@ -181,12 +183,12 @@ fun GameStatus(score: Int, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
     ) {
+        Log.d("GameViewModel", "chosenType: $score")
         Text(
             text = stringResource(R.string.score, score),
             style = typography.titleLarge,
             modifier = Modifier
         )
-
     }
 }
 
@@ -194,6 +196,7 @@ fun GameStatus(score: Int, modifier: Modifier = Modifier) {
 @Composable
 fun GameLayout(
     currentScrambledWord: String,
+    score: Int,
     wordMeaning:String,
     wordCount: Int,
     isGuessWrong: Boolean,
@@ -222,9 +225,11 @@ fun GameLayout(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
                 GameStatus(
-                    score = gameUiState.score,
+                    score = score,
                     modifier = Modifier.weight(1f)
+
                 )
 
                 Text(
