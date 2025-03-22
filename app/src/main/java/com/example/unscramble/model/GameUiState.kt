@@ -7,5 +7,11 @@ data class GameUiState(
     val score: Int = 0,
     val isGuessedWordWrong: Boolean = false,
     val isGameOver: Boolean = false,
-    val remainingTime: Int = 15
+    val remainingTime: Int = 15,
 )
+
+enum class GameDifficulty {
+    EASY,
+    MEDIUM,
+    HARD
+}

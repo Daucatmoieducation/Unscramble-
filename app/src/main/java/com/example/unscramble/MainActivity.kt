@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                 ) {
 //                    AppNavigation()
-                    GameScreen()
+                  GameScreen()
                 }
             }
         }

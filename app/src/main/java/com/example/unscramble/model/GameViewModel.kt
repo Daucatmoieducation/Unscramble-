@@ -29,6 +29,8 @@ class GameViewModel : ViewModel() {
     private lateinit var currentWord: String
     private var timerJob: Job? = null
     private var isTimeOut: Boolean = false
+    private var difficulty: GameDifficulty = GameDifficulty.EASY
+
     init {
         resetGame()
     }
@@ -43,7 +45,7 @@ class GameViewModel : ViewModel() {
             currentScrambledWord = firstScrambledWord,
             currentWordMeaning = firstWordMeaning
         )
-        startTime()
+        useTime()
     }
 
     fun updateUserGuess(guessedWord: String){
@@ -52,22 +54,27 @@ class GameViewModel : ViewModel() {
 
 
     fun checkUserGuess() {
+
 //        timerJob?.cancel()
         if (userGuess.equals(currentWord, ignoreCase = true)) {
-
-            val updatedScore = _uiState.value.score.plus(SCORE_INCREASE)
+            var bonusScore = 0
+            if(difficulty != GameDifficulty.EASY){
+                val remainingTime = _uiState.value.remainingTime
+                bonusScore = remainingTime * 2
+            }
+            val updatedScore = _uiState.value.score.plus(SCORE_INCREASE).plus(bonusScore)
             updateGameState(updatedScore)
-            startTime()
+            useTime()
         }
         else if(isTimeOut &&userGuess.equals(currentWord, ignoreCase = true) ){
             val updatedScore = _uiState.value.score.plus(SCORE_INCREASE)
             updateGameState(updatedScore)
-            startTime()
+            useTime()
         }
         else if(isTimeOut &&!(userGuess.equals(currentWord, ignoreCase = true)) ){
             val updatedScore = _uiState.value.score
             updateGameState(updatedScore)
-            startTime()
+            useTime()
         }
         else {
             _uiState.update { currentState ->
@@ -82,7 +89,12 @@ class GameViewModel : ViewModel() {
     fun skipWord() {
         updateGameState(_uiState.value.score)
         updateUserGuess("")
-        startTime()
+        useTime()
+    }
+
+    fun pauseGame(){
+//        isPauseGame = true
+        timerJob?.cancel()
     }
 
     fun startTime(){
@@ -98,13 +110,16 @@ class GameViewModel : ViewModel() {
         }
     }
 
+    fun useTime(){
+        if (difficulty != GameDifficulty.EASY) {
+            startTime()
+        }
+    }
+
     //end fun
 
     private fun updateGameState(updatedScore: Int) {
-        val nextScrambledWord = pickRandomWordAndShuffle()
-        val nextWordMeaning = allWords[currentWord] ?: ""
-        if (usedWords.size == MAX_NO_OF_WORDS) {
-
+        if (_uiState.value.currentWordCount >= MAX_NO_OF_WORDS) {
             _uiState.update { currentState ->
                 currentState.copy(
                     isGuessedWordWrong = false,
@@ -113,13 +128,15 @@ class GameViewModel : ViewModel() {
                 )
             }
         } else {
-            // Normal round in the game
+            val nextScrambledWord = pickRandomWordAndShuffle()
+            val nextWordMeaning = allWords[currentWord] ?: ""
+
             _uiState.update { currentState ->
                 currentState.copy(
                     isGuessedWordWrong = false,
                     currentScrambledWord = nextScrambledWord,
-                    currentWordMeaning = nextWordMeaning,  // Hiển thị nghĩa đúng
-                    currentWordCount = currentState.currentWordCount.inc(),
+                    currentWordMeaning = nextWordMeaning,
+                    currentWordCount = currentState.currentWordCount + 1,
                     score = updatedScore
                 )
             }
@@ -145,5 +162,4 @@ class GameViewModel : ViewModel() {
         usedWords.add(currentWord) // Đánh dấu từ đã dùng
         return shuffleCurrentWord(currentWord) // Trả về từ đã xáo trộn
     }
-
 }

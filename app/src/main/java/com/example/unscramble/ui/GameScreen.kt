@@ -5,6 +5,7 @@ import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -27,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -42,12 +44,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unscramble.R
+import com.example.unscramble.model.GameDifficulty
 import com.example.unscramble.model.GameViewModel
 import com.example.unscramble.model.TimerBar
 import com.example.unscramble.ui.theme.UnscrambleTheme
 
 @Composable
-fun GameScreen(gameViewModel: GameViewModel = viewModel(), modifier: Modifier = Modifier) {
+fun GameScreen(
+    difficulty: GameDifficulty = GameDifficulty.EASY,
+    modifier: Modifier = Modifier
+) {
+    val gameViewModel: GameViewModel = viewModel()
     val gameUiState by gameViewModel.uiState.collectAsState()
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
 
@@ -60,9 +67,12 @@ fun GameScreen(gameViewModel: GameViewModel = viewModel(), modifier: Modifier = 
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        TimerBar(remainingTime = gameUiState.remainingTime, modifier = Modifier.padding(mediumPadding))
-
+        if (difficulty != GameDifficulty.EASY) {
+            TimerBar(
+                remainingTime = gameUiState.remainingTime,
+                modifier = Modifier.padding(mediumPadding)
+            )
+        }
         GameLayout(
             onUserGuessChanged = { gameViewModel.updateUserGuess(it) },
             wordCount = gameUiState.currentWordCount,
@@ -105,12 +115,12 @@ fun GameScreen(gameViewModel: GameViewModel = viewModel(), modifier: Modifier = 
             }
         }
 
-        GameStatus(score = gameUiState.score, modifier = Modifier.padding(20.dp))
 
         if (gameUiState.isGameOver) {
             FinalScoreDialog(
                 score = gameUiState.score,
-                onPlayAgain = { gameViewModel.resetGame() }
+                onPlayAgain = { gameViewModel.resetGame() },
+                pauseGame = {gameViewModel.pauseGame()}
             )
         }
     }
@@ -123,8 +133,8 @@ fun GameStatus(score: Int, modifier: Modifier = Modifier) {
     ) {
         Text(
             text = stringResource(R.string.score, score),
-            style = typography.headlineMedium,
-            modifier = Modifier.padding(8.dp)
+            style = typography.titleLarge,
+            modifier = Modifier
         )
 
     }
@@ -141,8 +151,9 @@ fun GameLayout(
     onKeyboardDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val gameViewModel: GameViewModel = viewModel()
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
-
+    val gameUiState by gameViewModel.uiState.collectAsState()
     Card(
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
@@ -152,16 +163,29 @@ fun GameLayout(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(mediumPadding)
         ) {
-            Text(
+            Row(
                 modifier = Modifier
-                    .clip(shapes.medium)
-                    .background(colorScheme.surfaceTint)
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
-                    .align(alignment = Alignment.End),
-                text = stringResource(R.string.word_count, wordCount),
-                style = typography.titleMedium,
-                color = colorScheme.onPrimary
-            )
+                    .fillMaxWidth()
+                    .padding(bottom = 30.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                GameStatus(
+                    score = gameUiState.score,
+                    modifier = Modifier.weight(1f) // Đẩy về trái
+                )
+
+                Text(
+                    modifier = Modifier
+                        .clip(shapes.medium)
+                        .background(colorScheme.surfaceTint)
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    text = stringResource(R.string.word_count, wordCount),
+                    style = typography.titleMedium,
+                    color = colorScheme.onPrimary
+                )
+            }
+
             Text(
                 text = currentScrambledWord,
                 style = typography.displayMedium
@@ -203,18 +227,19 @@ fun GameLayout(
 }
 
 
-/*
- * Creates and shows an AlertDialog with final score.
- */
+//show score
 @SuppressLint("ContextCastToActivity")
 @Composable
 private fun FinalScoreDialog(
     score: Int,
     onPlayAgain: () -> Unit,
+    pauseGame:()->Unit,
     modifier: Modifier = Modifier
 ) {
     val activity = (LocalContext.current as Activity)
-
+    LaunchedEffect(Unit) {
+        pauseGame()
+    }
     AlertDialog(
         onDismissRequest = {
             // Dismiss the dialog when the user clicks outside the dialog or on the back
