@@ -30,13 +30,8 @@ class GameViewModel : ViewModel() {
     private lateinit var currentWord: String
     private var timerJob: Job? = null
     private var isTimeOut: Boolean = false
-
-    private val timeLimit = when (_uiState.value.typeGame) {
-        GameDifficulty.HARD -> 10
-        GameDifficulty.MEDIUM -> 15
-        else -> 1
-    }
-
+    private var isPaused = false
+    private var score_increase = SCORE_INCREASE
 
     init {
         resetGame()
@@ -49,12 +44,17 @@ class GameViewModel : ViewModel() {
     }
 
     fun resetGame() {
+        val timeLimit = when (_uiState.value.typeGame) {
+        GameDifficulty.HARD -> 15
+        GameDifficulty.MEDIUM -> 20
+        else -> 1
+    }
         val hintsAvailable = when (_uiState.value.typeGame) {
             GameDifficulty.HARD -> 3
             GameDifficulty.MEDIUM -> 5
             else -> 7
         }
-        Log.d("GameViewModel", "resetGame: typeGame before reset = ${_uiState.value.typeGame}")
+
         usedWords.clear()
         val firstScrambledWord = pickRandomWordAndShuffle()
         val firstWordMeaning = allWords.find { it.word == currentWord }?.meaning ?: ""
@@ -66,30 +66,32 @@ class GameViewModel : ViewModel() {
             typeGame = _uiState.value.typeGame,
             remainingTime = timeLimit
         )
-        Log.d("GameViewModel", "resetGame: ${_uiState.value.typeGame}")
-        usedTime()
-
+        if (_uiState.value.typeGame != GameDifficulty.EASY) {
+            usedTime()
+        }
     }
 
     fun updateUserGuess(guessedWord: String){
         userGuess = guessedWord
     }
 
-
     fun checkUserGuess() {
-
         if (userGuess.equals(currentWord, ignoreCase = true)) {
             var bonusScore = 0
             if(_uiState.value.typeGame != GameDifficulty.EASY){
                 val remainingTime = _uiState.value.remainingTime
-                bonusScore = remainingTime * 2
+                bonusScore = when(_uiState.value.typeGame){
+                    GameDifficulty.MEDIUM-> remainingTime*2
+                    else ->(remainingTime*4.5).toInt()
+                }
             }
-            val updatedScore = _uiState.value.score.plus(SCORE_INCREASE).plus(bonusScore)
+
+            val updatedScore = _uiState.value.score.plus(score_increase).plus(bonusScore)
             updateGameState(updatedScore)
             usedTime()
         }
         else if(isTimeOut &&userGuess.equals(currentWord, ignoreCase = true) ){
-            val updatedScore = _uiState.value.score.plus(SCORE_INCREASE)
+            var updatedScore = _uiState.value.score.plus(score_increase)
             updateGameState(updatedScore)
             usedTime()
         }
@@ -107,31 +109,37 @@ class GameViewModel : ViewModel() {
         isTimeOut = false
     }
 
+
     fun skipWord() {
         updateGameState(_uiState.value.score)
         updateUserGuess("")
         usedTime()
     }
 
-    fun pauseGame(){
-//        isPauseGame = true
+    fun pauseGame() {
+        isPaused = true
         timerJob?.cancel()
+    }
+
+    fun resumeGame() {
+        isPaused = false
+        startTime()
     }
 
     fun startTime(){
         timerJob?.cancel()
-        val timeLimit = when(_uiState.value.typeGame){
-            GameDifficulty.HARD-> 10
-            GameDifficulty.MEDIUM->15
-            else ->1
-        }
+        val remainingTime = _uiState.value.remainingTime // Lấy thời gian còn lại
+
         timerJob = viewModelScope.launch {
-            for (time in timeLimit downTo 0) {
+            for (time in remainingTime downTo 0) { // Bắt đầu từ thời gian còn lại
+                if (isPaused) break
                 _uiState.update { it.copy(remainingTime = time) }
                 delay(1000L)
             }
-            isTimeOut = true
-            checkUserGuess()
+            if (!isPaused && _uiState.value.typeGame != GameDifficulty.EASY) {
+                isTimeOut = true
+                checkUserGuess()
+            }
         }
     }
 
@@ -159,6 +167,16 @@ class GameViewModel : ViewModel() {
             }
         }
     }
+
+    fun useSuperHint() {
+        _uiState.update { currentState ->
+            currentState.copy(
+                isSuperHintUsed = true
+            )
+        }
+        score_increase = (SCORE_INCREASE*0.5).toInt()
+    }
+
 
     fun chosenType(gameDifficulty: GameDifficulty){
         val timeLimit = when (gameDifficulty) {

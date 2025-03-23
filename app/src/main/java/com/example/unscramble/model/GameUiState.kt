@@ -10,6 +10,7 @@ data class GameUiState(
     val remainingTime: Int = 15,
     val hint: String = "",
     val hintNumbers: Int = 0,
+    val isSuperHintUsed : Boolean = false,
     val typeGame: GameDifficulty = GameDifficulty.EASY
 )
 

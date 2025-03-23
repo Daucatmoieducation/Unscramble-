@@ -1,10 +1,13 @@
 package com.example.unscramble.ui
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -33,6 +36,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,16 +46,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.unscramble.R
 import com.example.unscramble.model.GameDifficulty
 import com.example.unscramble.model.GameViewModel
 import com.example.unscramble.model.TimerBar
+import com.example.unscramble.ui.theme.UnscrambleTheme
 
 @Composable
 fun GameScreen(
@@ -61,7 +72,38 @@ fun GameScreen(
     val gameUiState by gameViewModel.uiState.collectAsState()
     val difficulty: GameDifficulty =gameUiState.typeGame
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
+    var showExitDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(showExitDialog) {
+        if (showExitDialog) {
+            gameViewModel.pauseGame()  // Dừng game
+        } else {
+            gameViewModel.resumeGame() // Tiếp tục game
+        }
+    }
+    BackHandler(enabled = true) {
+        showExitDialog = true
+    }
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Xác nhận thoát") },
+            text = { Text("Bạn có chắc chắn muốn thoát khỏi trò chơi?") },
+            confirmButton = {
+                Button(onClick = {
+                    showExitDialog = false
+                    navController.popBackStack() // Quay về màn hình trước đó
+                }) {
+                    Text("Thoát")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showExitDialog = false }) {
+                    Text("Hủy")
+                }
+            }
+        )
+    }
     Column(
         modifier = modifier
             .statusBarsPadding()
@@ -74,8 +116,8 @@ fun GameScreen(
         Text(text = "Chế độ: ${gameUiState.typeGame}")
         if (difficulty != GameDifficulty.EASY) {
             val maxTime = when (gameUiState.typeGame) {
-                GameDifficulty.HARD -> 10
-                GameDifficulty.MEDIUM -> 15
+                GameDifficulty.HARD -> 15
+                GameDifficulty.MEDIUM -> 20
                 else -> 1
             }
             TimerBar(
@@ -84,11 +126,14 @@ fun GameScreen(
                 modifier = Modifier.padding(mediumPadding)
             )
         }
-        if (gameUiState.hintNumbers>0){
+        if (gameUiState.hintNumbers > 0 || gameUiState.isSuperHintUsed == false) {
             AssistanceBar(
-                usedHint = {gameViewModel.useHint()},
                 hintNumber = gameUiState.hintNumbers,
-                modifier = Modifier.fillMaxWidth()
+                isSuperHintUsed = gameUiState.isSuperHintUsed,
+                usedHint = { gameViewModel.useHint() },
+                usedSuperHint = { gameViewModel.useSuperHint() },
+                modifier = Modifier
+                    .fillMaxWidth()
                     .padding(horizontal = mediumPadding)
             )
         }
@@ -103,10 +148,11 @@ fun GameScreen(
             isGuessWrong = gameUiState.isGuessedWordWrong,
             hint = gameUiState.hint,
             score = gameUiState.score,
+            isSuperHintUsed = gameUiState.isSuperHintUsed,
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(bottom = mediumPadding, start = mediumPadding,end = mediumPadding)
+                .padding(bottom = mediumPadding, start = mediumPadding, end = mediumPadding)
         )
         Column(
             modifier = Modifier
@@ -152,22 +198,47 @@ fun GameScreen(
 @Composable
 fun AssistanceBar(
     hintNumber: Int,
-    usedHint: ()->Unit,
+    isSuperHintUsed: Boolean,
+    usedHint: () -> Unit,
+    usedSuperHint: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier.padding(bottom = 5.dp),
-        horizontalArrangement = Arrangement.End,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = "${hintNumber}x",style = typography.titleLarge,)
-        AssistanceIcon(onClicked = usedHint)
+        // Hiển thị Siêu trợ giúp (🔥) nếu còn lượt sử dụng
+        if (isSuperHintUsed ==false) {
+            AssistanceIcon(
+                onClicked = usedSuperHint,
+                icon = R.drawable.baseline_local_fire_department_24
+            )
+        } else {
+            Spacer(modifier = Modifier.size(48.dp)) // Giữ khoảng trống khi mất icon
+        }
+
+        Spacer(modifier = Modifier.weight(1f)) // Đẩy iconHint sang phải
+
+        // Hiển thị Gợi ý (💡) nếu còn lượt sử dụng
+        if (hintNumber > 0) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "${hintNumber}x", style = typography.titleLarge)
+                AssistanceIcon(
+                    onClicked = usedHint,
+                    icon = R.drawable.baseline_lightbulb_24
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.size(48.dp)) // Giữ khoảng trống khi mất icon
+        }
     }
 }
 
-
 @Composable
 fun AssistanceIcon(
+    @DrawableRes icon : Int,
     onClicked: ()->Unit,
     modifier: Modifier = Modifier
 ){
@@ -177,7 +248,7 @@ fun AssistanceIcon(
         modifier = modifier.size(50.dp)
     ) {
         Icon(
-            painter = painterResource(R.drawable.baseline_lightbulb_24),
+            painter = painterResource(icon),
             contentDescription = "Help",
             tint = Color.Unspecified,
         )
@@ -210,6 +281,7 @@ fun GameLayout(
     onUserGuessChanged: (String) -> Unit,
     onKeyboardDone: () -> Unit,
     hint: String,
+    isSuperHintUsed: Boolean,
     modifier: Modifier = Modifier
 ) {
     val gameViewModel: GameViewModel = viewModel()
@@ -226,8 +298,7 @@ fun GameLayout(
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 30.dp),
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -251,14 +322,17 @@ fun GameLayout(
 
             Text(
                 text = currentScrambledWord,
-                style = typography.displayMedium
+                style = typography.displayMedium,
+                fontWeight = FontWeight.Bold
             )
-            Text(
-//                text = stringResource(R.string.instructions),
-                text =wordMeaning,
-                textAlign = TextAlign.Center,
-                style = typography.titleMedium
-            )
+            if (isSuperHintUsed ==true){
+                Text(
+                    text =wordMeaning,
+                    textAlign = TextAlign.Center,
+                    style = typography.titleMedium,
+                    fontStyle = FontStyle.Italic
+                )
+            }
             Text(
                 text = hint,
             )
@@ -303,9 +377,7 @@ private fun FinalScoreDialog(
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(Unit) {
-        pauseGame()
-    }
+
     AlertDialog(
         onDismissRequest = {},
         title = { Text(text = stringResource(R.string.congratulations)) },
@@ -329,12 +401,13 @@ private fun FinalScoreDialog(
 }
 
 
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun GameScreenPreview() {
-//    UnscrambleTheme {
-//        val navController = rememberNavController()
-//        GameScreen(navController)
-//    }
-//}
+
+@Preview(showBackground = true)
+@Composable
+fun GameScreenPreview() {
+    UnscrambleTheme {
+        val gameViewModel: GameViewModel = viewModel()
+        val navController = rememberNavController()
+        GameScreen(gameViewModel = gameViewModel, navController = navController)
+    }
+}

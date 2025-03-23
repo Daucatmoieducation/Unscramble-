@@ -35,5 +35,11 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxSize()
             )
         }
+        composable("signup_screen"){
+            SignupScreen(
+                navController = navController,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
