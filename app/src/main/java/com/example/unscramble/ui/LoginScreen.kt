@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -21,6 +24,7 @@ import com.google.firebase.auth.FirebaseUser
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,6 +45,7 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") } // Lưu trữ thông báo lỗi
     val auth = FirebaseAuth.getInstance()
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.padding(16.dp),
@@ -77,7 +82,9 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
                     errorMessage = errorText
                 }
             },
-            isPassword = true
+            isPassword = true,
+            passwordVisible = passwordVisible,
+            onTogglePasswordVisibility = { passwordVisible = !passwordVisible }
         )
 
         // Hiển thị thông báo lỗi nếu có
@@ -148,11 +155,13 @@ private fun Login(
 @Composable
 fun GetTextField(
     value: String,
-    label: String,
     onValueChanged: (String) -> Unit,
-    keyboardOptionDone: ()->Unit = {},
+    label: String,
     keyboardOption: KeyboardOptions,
+    keyboardOptionDone: () -> Unit = {}, // Giá trị mặc định
     isPassword: Boolean = false,
+    passwordVisible: Boolean = false,
+    onTogglePasswordVisibility: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     TextField(
@@ -161,10 +170,25 @@ fun GetTextField(
         label = { Text(label) },
         keyboardOptions = keyboardOption,
         keyboardActions = KeyboardActions(
-          onDone = {keyboardOptionDone()}
+            onDone = { keyboardOptionDone() }
         ),
-        visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
-        modifier = modifier.padding(vertical = 5.dp)
+        visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
+        trailingIcon = {
+            if (isPassword) {
+                IconButton(onClick = { onTogglePasswordVisibility?.invoke() }) {
+                    Icon(
+                        painter = if (passwordVisible) {
+                            painterResource(R.drawable.baseline_visibility_24)
+                        } else {
+                            painterResource(R.drawable.baseline_visibility_off_24)
+                        },
+                        contentDescription = if (passwordVisible) "Ẩn mật khẩu" else "Hiện mật khẩu"
+                    )
+                }
+            }
+        },
+        modifier = modifier
+            .padding(vertical = 5.dp)
             .width(300.dp)
     )
 }

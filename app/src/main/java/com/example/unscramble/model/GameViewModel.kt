@@ -31,6 +31,13 @@ class GameViewModel : ViewModel() {
     private var timerJob: Job? = null
     private var isTimeOut: Boolean = false
 
+    private val timeLimit = when (_uiState.value.typeGame) {
+        GameDifficulty.HARD -> 10
+        GameDifficulty.MEDIUM -> 15
+        else -> 1
+    }
+
+
     init {
         resetGame()
     }
@@ -42,6 +49,11 @@ class GameViewModel : ViewModel() {
     }
 
     fun resetGame() {
+        val hintsAvailable = when (_uiState.value.typeGame) {
+            GameDifficulty.HARD -> 3
+            GameDifficulty.MEDIUM -> 5
+            else -> 7
+        }
         Log.d("GameViewModel", "resetGame: typeGame before reset = ${_uiState.value.typeGame}")
         usedWords.clear()
         val firstScrambledWord = pickRandomWordAndShuffle()
@@ -50,8 +62,9 @@ class GameViewModel : ViewModel() {
         _uiState.value = GameUiState(
             currentScrambledWord = firstScrambledWord,
             currentWordMeaning = firstWordMeaning,
-            hintNumbers = 3,
+            hintNumbers = hintsAvailable,
             typeGame = _uiState.value.typeGame,
+            remainingTime = timeLimit
         )
         Log.d("GameViewModel", "resetGame: ${_uiState.value.typeGame}")
         usedTime()
@@ -65,7 +78,6 @@ class GameViewModel : ViewModel() {
 
     fun checkUserGuess() {
 
-//        timerJob?.cancel()
         if (userGuess.equals(currentWord, ignoreCase = true)) {
             var bonusScore = 0
             if(_uiState.value.typeGame != GameDifficulty.EASY){
@@ -92,7 +104,6 @@ class GameViewModel : ViewModel() {
             }
         }
         updateUserGuess("")
-//        startTime()
         isTimeOut = false
     }
 
@@ -109,11 +120,15 @@ class GameViewModel : ViewModel() {
 
     fun startTime(){
         timerJob?.cancel()
-
+        val timeLimit = when(_uiState.value.typeGame){
+            GameDifficulty.HARD-> 10
+            GameDifficulty.MEDIUM->15
+            else ->1
+        }
         timerJob = viewModelScope.launch {
-            for (time in 10 downTo 0) {
+            for (time in timeLimit downTo 0) {
                 _uiState.update { it.copy(remainingTime = time) }
-                delay(1000L) // Chờ 1 giây
+                delay(1000L)
             }
             isTimeOut = true
             checkUserGuess()
@@ -146,9 +161,15 @@ class GameViewModel : ViewModel() {
     }
 
     fun chosenType(gameDifficulty: GameDifficulty){
+        val timeLimit = when (gameDifficulty) {
+            GameDifficulty.HARD -> 10
+            GameDifficulty.MEDIUM -> 15
+            else -> 1
+        }
         _uiState.update { currentState->
             currentState.copy(
-                typeGame = gameDifficulty
+                typeGame = gameDifficulty,
+                remainingTime = timeLimit,
             )
         }
         Log.d("GameViewModel", "chosenType: ${gameDifficulty}")

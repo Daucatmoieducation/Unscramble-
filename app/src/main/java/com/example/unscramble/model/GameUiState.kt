@@ -9,7 +9,7 @@ data class GameUiState(
     val isGameOver: Boolean = false,
     val remainingTime: Int = 15,
     val hint: String = "",
-    val hintNumbers: Int = 3,
+    val hintNumbers: Int = 0,
     val typeGame: GameDifficulty = GameDifficulty.EASY
 )
 

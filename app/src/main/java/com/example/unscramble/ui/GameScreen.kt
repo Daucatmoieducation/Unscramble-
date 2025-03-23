@@ -73,8 +73,14 @@ fun GameScreen(
     ) {
         Text(text = "Chế độ: ${gameUiState.typeGame}")
         if (difficulty != GameDifficulty.EASY) {
+            val maxTime = when (gameUiState.typeGame) {
+                GameDifficulty.HARD -> 10
+                GameDifficulty.MEDIUM -> 15
+                else -> 1
+            }
             TimerBar(
                 remainingTime = gameUiState.remainingTime,
+                maxTime = maxTime,
                 modifier = Modifier.padding(mediumPadding)
             )
         }

@@ -1,7 +1,8 @@
 package com.example.unscramble.model
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,24 +18,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun TimerBar(remainingTime: Int, modifier: Modifier = Modifier) {
-    var animatedProgress by remember { mutableFloatStateOf(remainingTime / 10f) }
+fun TimerBar(remainingTime: Int, maxTime: Int, modifier: Modifier = Modifier) {
+    var animatedProgress by remember { mutableFloatStateOf(1f) }
 
     LaunchedEffect(remainingTime) {
-        animate(
-            initialValue = animatedProgress,
-            targetValue = remainingTime / 10f,
-            animationSpec = tween(durationMillis = 1000, easing = LinearEasing)
-        ) { value, _ ->
-            animatedProgress = value
-        }
+        animatedProgress = remainingTime.toFloat() / maxTime
     }
 
+    val smoothProgress by animateFloatAsState(
+        targetValue = animatedProgress,
+        animationSpec = tween(durationMillis = 1000, easing = LinearEasing), label = ""
+    )
+
+    val progressColor by animateColorAsState(
+        targetValue = when {
+            smoothProgress > 0.5f -> Color.Green
+            smoothProgress > 0.2f -> Color.Yellow
+            else -> Color.Red
+        },
+        animationSpec = tween(durationMillis = 500), label = "" // Đổi màu mượt hơn
+    )
+
     LinearProgressIndicator(
-        progress = { animatedProgress },
+        progress = { smoothProgress },
         modifier = modifier
             .fillMaxWidth()
             .height(8.dp),
-        color = if (remainingTime > 3) Color.Green else Color.Red,
+        color = progressColor,
     )
 }
+
