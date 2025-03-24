@@ -37,7 +37,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,7 +68,7 @@ fun HomeScreen(
     ) {
         AppBar(navController = navController)
         Column(
-            modifier = Modifier.fillMaxSize().padding(top = 380.dp),
+            modifier = Modifier.fillMaxSize().padding(top = 350.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             PlayButton(
@@ -84,6 +86,16 @@ fun HomeScreen(
             ) {
                 DifficultyOptions(navController, gameViewModel)
             }
+
+            ClassifyText(
+                typeRes = R.string.your_note,
+                onClicked = {},
+                color = Color.Black,
+                style = TextStyle(
+                    textDecoration = TextDecoration.Underline
+                ),
+                modifier = Modifier.padding(top = 5.dp)
+            )
         }
     }
 }
@@ -92,7 +104,7 @@ fun HomeScreen(
 @Composable
 fun AppBar(navController: NavController, modifier: Modifier = Modifier) {
     val auth = Firebase.auth
-    var user by remember { mutableStateOf<FirebaseUser?>(auth.currentUser) }
+    var user by remember { mutableStateOf<FirebaseUser?>(null) }
     var showLogoutDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog
 
     DisposableEffect(auth) {
@@ -111,13 +123,12 @@ fun AppBar(navController: NavController, modifier: Modifier = Modifier) {
         ?: user?.email?.substringBefore("@") // Lấy phần trước dấu "@"
 
     TopAppBar(
-        title = { Text(text = "") },
-        actions = {
+        title = {
             if (displayName != null) {
                 Text(
                     text = "Hi, $displayName",
                     modifier = Modifier
-                        .padding(end = 16.dp)
+                        .padding(top = 16.dp)
                         .clickable { showLogoutDialog = true }, // Khi nhấn vào tên, hiển thị dialog
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
@@ -130,8 +141,9 @@ fun AppBar(navController: NavController, modifier: Modifier = Modifier) {
                         modifier = Modifier.size(32.dp)
                     )
                 }
-            }
-        },
+
+        } },
+
         modifier = modifier
     )
 
@@ -217,7 +229,8 @@ fun DifficultyOptions(
             onClicked = {
                 gameViewModel.chosenType(GameDifficulty.HARD)
                 navController.navigate("game_screen")
-            }
+            },
+
         )
     }
 }
@@ -226,14 +239,16 @@ fun DifficultyOptions(
 fun ClassifyText(
     @StringRes typeRes: Int,
     color: Color,
+    modifier: Modifier = Modifier,
     onClicked: () -> Unit,
-    modifier: Modifier = Modifier
+    style: TextStyle = TextStyle()
 ) {
     Text(
         text = stringResource(typeRes),
         color = color,
         fontSize = 14.sp,
         fontWeight = FontWeight.Bold,
+        style = style,
         modifier = modifier
             .padding(vertical = 4.dp, horizontal = 20.dp)
             .clickable(onClick = onClicked) // Biến Text thành nút bấm

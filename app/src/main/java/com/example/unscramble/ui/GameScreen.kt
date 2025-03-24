@@ -299,9 +299,7 @@ fun GameLayout(
     isSuperHintUsed: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val gameViewModel: GameViewModel = viewModel()
     val mediumPadding = dimensionResource(R.dimen.padding_medium)
-    val gameUiState by gameViewModel.uiState.collectAsState()
     Card(
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)

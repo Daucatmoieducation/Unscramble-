@@ -10,9 +10,10 @@
     <string name="you_scored">"You scored: %d"</string>
     <string name="exit">Exit</string>
     <string name="play_again">Play Again</string>
-    <string name="wrong_guess">Wrong Guess!</string>
+    <string name="wrong_guess">Đáp án Sai !</string>
     <string name="login">Login</string>
     <string name="easy">Dễ</string>
     <string name="medium">Trung Bình</string>
     <string name="hard">Khó</string>
+    <string name="your_note">Sổ tay của tôi</string>
 </resources>
