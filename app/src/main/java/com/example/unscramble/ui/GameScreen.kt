@@ -136,7 +136,7 @@ fun GameScreen(
                 TimerBar(
                     remainingTime = gameUiState.remainingTime,
                     maxTime = maxTime,
-                    modifier = Modifier.padding(mediumPadding)
+                    modifier = Modifier.padding(mediumPadding).clip(shapes.medium)
                 )
             }
             if (gameUiState.hintNumbers > 0 || gameUiState.isSuperHintUsed == false) {

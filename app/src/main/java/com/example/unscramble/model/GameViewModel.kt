@@ -66,9 +66,7 @@ class GameViewModel : ViewModel() {
             typeGame = _uiState.value.typeGame,
             remainingTime = timeLimit
         )
-        if (_uiState.value.typeGame != GameDifficulty.EASY) {
-            usedTime()
-        }
+        usedTime()
     }
 
     fun updateUserGuess(guessedWord: String){
@@ -122,26 +120,38 @@ class GameViewModel : ViewModel() {
     }
 
     fun resumeGame() {
-        isPaused = false
-        startTime()
+        if (isPaused) {
+            startTime() // Tiếp tục đếm ngược thay vì reset
+        }
     }
 
     fun startTime(){
-        timerJob?.cancel()
-        val remainingTime = _uiState.value.remainingTime // Lấy thời gian còn lại
+        timerJob?.cancel() // Hủy bộ đếm cũ nếu có
+
+        val timeLimit = when (_uiState.value.typeGame) {
+            GameDifficulty.HARD -> 13
+            GameDifficulty.MEDIUM -> 17
+            else -> 1
+        }
+
+        val remainingTime = _uiState.value.remainingTime // Giữ lại thời gian hiện tại
+
+        // Nếu game đang tạm dừng, không reset lại thời gian
+        val startTime = if (isPaused) remainingTime else timeLimit
+
+        isPaused = false // Đánh dấu là game đã tiếp tục
 
         timerJob = viewModelScope.launch {
-            for (time in remainingTime downTo 0) { // Bắt đầu từ thời gian còn lại
-                if (isPaused) break
+            for (time in startTime downTo 0) {
                 _uiState.update { it.copy(remainingTime = time) }
                 delay(1000L)
             }
-            if (!isPaused && _uiState.value.typeGame != GameDifficulty.EASY) {
-                isTimeOut = true
-                checkUserGuess()
-            }
+            isTimeOut = true
+            checkUserGuess()
         }
     }
+
+
 
 
 
