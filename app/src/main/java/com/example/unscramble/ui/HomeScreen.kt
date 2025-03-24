@@ -10,18 +10,25 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +48,10 @@ import com.example.unscramble.R
 import com.example.unscramble.model.GameDifficulty
 import com.example.unscramble.model.GameViewModel
 import com.example.unscramble.ui.theme.UnscrambleTheme
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.auth
 
 @Composable
 fun HomeScreen(
@@ -51,27 +62,104 @@ fun HomeScreen(
     var showDifficultyOptions by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = modifier.fillMaxSize()
     ) {
-        PlayButton(
-            onClick = { showDifficultyOptions = !showDifficultyOptions }
-        )
-
-        AnimatedVisibility(
-            visible = showDifficultyOptions,
-            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(
-                initialOffsetY = { -it }
-            ),
-            exit = fadeOut(animationSpec = tween(300)) + slideOutVertically(
-                targetOffsetY = { -it }
-            )
+        AppBar(navController = navController)
+        Column(
+            modifier = Modifier.fillMaxSize().padding(top = 380.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            DifficultyOptions(navController, gameViewModel)
+            PlayButton(
+                onClick = { showDifficultyOptions = !showDifficultyOptions }
+            )
+
+            AnimatedVisibility(
+                visible = showDifficultyOptions,
+                enter = fadeIn(animationSpec = tween(500)) + slideInVertically(
+                    initialOffsetY = { -it }
+                ),
+                exit = fadeOut(animationSpec = tween(300)) + slideOutVertically(
+                    targetOffsetY = { -it }
+                )
+            ) {
+                DifficultyOptions(navController, gameViewModel)
+            }
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppBar(navController: NavController, modifier: Modifier = Modifier) {
+    val auth = Firebase.auth
+    var user by remember { mutableStateOf<FirebaseUser?>(auth.currentUser) }
+    var showLogoutDialog by remember { mutableStateOf(false) } // Trạng thái hiển thị dialog
+
+    DisposableEffect(auth) {
+        val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            user = firebaseAuth.currentUser
+        }
+        auth.addAuthStateListener(listener)
+
+        onDispose {
+            auth.removeAuthStateListener(listener)
+        }
+    }
+
+    // Xử lý tên hiển thị
+    val displayName = user?.displayName?.takeIf { it.isNotEmpty() }
+        ?: user?.email?.substringBefore("@") // Lấy phần trước dấu "@"
+
+    TopAppBar(
+        title = { Text(text = "") },
+        actions = {
+            if (displayName != null) {
+                Text(
+                    text = "Hi, $displayName",
+                    modifier = Modifier
+                        .padding(end = 16.dp)
+                        .clickable { showLogoutDialog = true }, // Khi nhấn vào tên, hiển thị dialog
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            } else {
+                IconButton(onClick = { navController.navigate("login_screen") }) {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "User Icon",
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
+        },
+        modifier = modifier
+    )
+
+    // Dialog xác nhận đăng xuất
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Đăng xuất") },
+            text = { Text("Bạn có chắc chắn muốn đăng xuất không?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    auth.signOut()
+                    user = null
+                    showLogoutDialog = false
+                    navController.navigate("home_screen")
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Hủy")
+                }
+            }
+        )
+    }
+}
+
 
 @Composable
 fun PlayButton(
@@ -95,6 +183,7 @@ fun PlayButton(
         )
     }
 }
+
 @Composable
 fun DifficultyOptions(
     navController: NavController,
@@ -104,7 +193,7 @@ fun DifficultyOptions(
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(0.dp) // Thêm khoảng cách giữa các tùy chọn
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         ClassifyText(
             typeRes = R.string.easy,
@@ -152,6 +241,7 @@ fun ClassifyText(
 }
 
 
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewHome(){
@@ -159,7 +249,7 @@ fun PreviewHome(){
         val navController = rememberNavController()
         val gameViewModel: GameViewModel = viewModel()
 //                    AppNavigation()
-//               GameScreen(navController,gameViewModel)
-        DifficultyOptions(navController,gameViewModel)
+//        GameScreen(navController,gameViewModel)
+        HomeScreen(navController,gameViewModel)
     }
 }

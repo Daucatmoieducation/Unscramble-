@@ -12,7 +12,7 @@
     <string name="play_again">Play Again</string>
     <string name="wrong_guess">Wrong Guess!</string>
     <string name="login">Login</string>
-    <string name="easy">Easy</string>
-    <string name="medium">Medium</string>
-    <string name="hard">HARD</string>
+    <string name="easy">Dễ</string>
+    <string name="medium">Trung Bình</string>
+    <string name="hard">Khó</string>
 </resources>
