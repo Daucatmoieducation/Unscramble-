@@ -45,8 +45,8 @@ class GameViewModel : ViewModel() {
 
     fun resetGame() {
         val timeLimit = when (_uiState.value.typeGame) {
-        GameDifficulty.HARD -> 15
-        GameDifficulty.MEDIUM -> 20
+        GameDifficulty.HARD -> 13
+        GameDifficulty.MEDIUM -> 17
         else -> 1
     }
         val hintsAvailable = when (_uiState.value.typeGame) {

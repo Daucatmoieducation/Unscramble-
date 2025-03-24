@@ -29,9 +29,11 @@ import androidx.compose.material3.MaterialTheme.shapes
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -104,95 +106,108 @@ fun GameScreen(
             }
         )
     }
-    Column(
-        modifier = modifier
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .safeDrawingPadding()
-            .padding(mediumPadding),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "Chế độ: ${gameUiState.typeGame}")
-        if (difficulty != GameDifficulty.EASY) {
-            val maxTime = when (gameUiState.typeGame) {
-                GameDifficulty.HARD -> 15
-                GameDifficulty.MEDIUM -> 20
-                else -> 1
-            }
-            TimerBar(
-                remainingTime = gameUiState.remainingTime,
-                maxTime = maxTime,
-                modifier = Modifier.padding(mediumPadding)
+    Scaffold(
+        topBar = {
+            TopIconBar(
+                onClicked = {
+                    showExitDialog = true
+                }
             )
-        }
-        if (gameUiState.hintNumbers > 0 || gameUiState.isSuperHintUsed == false) {
-            AssistanceBar(
-                hintNumber = gameUiState.hintNumbers,
-                isSuperHintUsed = gameUiState.isSuperHintUsed,
-                usedHint = { gameViewModel.useHint() },
-                usedSuperHint = { gameViewModel.useSuperHint() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = mediumPadding)
-            )
-        }
-        Log.d("GameScreen", "Recomposing GameScreen: score = ${gameUiState.score}")
-        GameLayout(
-            onUserGuessChanged = { gameViewModel.updateUserGuess(it) },
-            wordCount = gameUiState.currentWordCount,
-            userGuess = gameViewModel.userGuess,
-            onKeyboardDone = { gameViewModel.checkUserGuess() },
-            currentScrambledWord = gameUiState.currentScrambledWord,
-            wordMeaning = gameUiState.currentWordMeaning,
-            isGuessWrong = gameUiState.isGuessedWordWrong,
-            hint = gameUiState.hint,
-            score = gameUiState.score,
-            isSuperHintUsed = gameUiState.isSuperHintUsed,
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(bottom = mediumPadding, start = mediumPadding, end = mediumPadding)
-        )
+        },
+        modifier = Modifier.fillMaxWidth().statusBarsPadding()
+    ) {innerPadding->
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = modifier
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .safeDrawingPadding()
+                .padding(innerPadding)
                 .padding(mediumPadding),
-            verticalArrangement = Arrangement.spacedBy(mediumPadding),
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = { gameViewModel.checkUserGuess() }
-            ) {
-                Text(
-                    text = stringResource(R.string.submit),
-                    fontSize = 16.sp
+            Text(text = "Chế độ: ${gameUiState.typeGame}")
+            if (difficulty != GameDifficulty.EASY) {
+                val maxTime = when (gameUiState.typeGame) {
+                    GameDifficulty.HARD -> 13
+                    GameDifficulty.MEDIUM -> 17
+                    else -> 1
+                }
+                TimerBar(
+                    remainingTime = gameUiState.remainingTime,
+                    maxTime = maxTime,
+                    modifier = Modifier.padding(mediumPadding)
                 )
             }
-
-            OutlinedButton(
-                onClick = { gameViewModel.skipWord() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(R.string.skip),
-                    fontSize = 16.sp
+            if (gameUiState.hintNumbers > 0 || gameUiState.isSuperHintUsed == false) {
+                AssistanceBar(
+                    hintNumber = gameUiState.hintNumbers,
+                    isSuperHintUsed = gameUiState.isSuperHintUsed,
+                    usedHint = { gameViewModel.useHint() },
+                    usedSuperHint = { gameViewModel.useSuperHint() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = mediumPadding)
                 )
             }
-        }
-
-
-        if (gameUiState.isGameOver) {
-            FinalScoreDialog(
+            Log.d("GameScreen", "Recomposing GameScreen: score = ${gameUiState.score}")
+            GameLayout(
+                onUserGuessChanged = { gameViewModel.updateUserGuess(it) },
+                wordCount = gameUiState.currentWordCount,
+                userGuess = gameViewModel.userGuess,
+                onKeyboardDone = { gameViewModel.checkUserGuess() },
+                currentScrambledWord = gameUiState.currentScrambledWord,
+                wordMeaning = gameUiState.currentWordMeaning,
+                isGuessWrong = gameUiState.isGuessedWordWrong,
+                hint = gameUiState.hint,
                 score = gameUiState.score,
-                onPlayAgain = { gameViewModel.resetGame() },
-                pauseGame = {gameViewModel.pauseGame()},
-                navController = navController
+                isSuperHintUsed = gameUiState.isSuperHintUsed,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(bottom = mediumPadding, start = mediumPadding, end = mediumPadding)
             )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(mediumPadding),
+                verticalArrangement = Arrangement.spacedBy(mediumPadding),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { gameViewModel.checkUserGuess() }
+                ) {
+                    Text(
+                        text = stringResource(R.string.submit),
+                        fontSize = 16.sp
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = { gameViewModel.skipWord() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = stringResource(R.string.skip),
+                        fontSize = 16.sp
+                    )
+                }
+            }
+
+
+            if (gameUiState.isGameOver) {
+                FinalScoreDialog(
+                    score = gameUiState.score,
+                    onPlayAgain = { gameViewModel.resetGame() },
+                    pauseGame = {gameViewModel.pauseGame()},
+                    navController = navController
+                )
+            }
         }
     }
+
 }
 
 @Composable
@@ -364,6 +379,19 @@ fun GameLayout(
                 )
             )
         }
+    }
+}
+
+@Composable
+fun TopIconBar(
+    onClicked: () -> Unit,
+    modifier: Modifier = Modifier
+){
+    IconButton(onClick = onClicked) {
+        Icon(
+            painter = painterResource(R.drawable.baseline_arrow_back_ios_24),
+            null
+        )
     }
 }
 

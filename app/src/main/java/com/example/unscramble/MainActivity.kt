@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.unscramble.model.GameViewModel
 import com.example.unscramble.ui.AppNavigation
 import com.example.unscramble.ui.GameScreen
+import com.example.unscramble.ui.HomeScreen
 import com.example.unscramble.ui.LoginScreen
 import com.example.unscramble.ui.theme.UnscrambleTheme
 
@@ -26,8 +27,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     val gameViewModel: GameViewModel = viewModel()
-                    AppNavigation()
-//                  GameScreen(navController,gameViewModel)
+//                    AppNavigation()
+//               GameScreen(navController,gameViewModel)
+                    HomeScreen(navController,gameViewModel)
                 }
             }
         }

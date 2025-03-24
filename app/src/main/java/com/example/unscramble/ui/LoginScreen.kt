@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -187,8 +188,9 @@ fun GetTextField(
     passwordVisible: Boolean = false,
     onTogglePasswordVisibility: (() -> Unit)? = null,
     backgroundColorHex: String = "#FFF5BE",
-    modifier: Modifier = Modifier
 ) {
+    val focusedColor = Color.Gray
+    val unfocusedColor = Color.LightGray
     TextField(
         value = value,
         onValueChange = onValueChanged,
@@ -212,16 +214,21 @@ fun GetTextField(
                 }
             }
         },
-        colors = TextFieldDefaults.textFieldColors(
-            containerColor = Color(android.graphics.Color.parseColor(backgroundColorHex)),
+        colors = TextFieldDefaults.colors(
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black,
+            focusedContainerColor = Color(android.graphics.Color.parseColor(backgroundColorHex)),
+            unfocusedContainerColor = Color(android.graphics.Color.parseColor(backgroundColorHex)),
+            focusedIndicatorColor = focusedColor,
+            unfocusedIndicatorColor = unfocusedColor,
             cursorColor = Color.Gray,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent
+            disabledTextColor = Color.Gray
         ),
-        modifier = modifier
+        modifier = Modifier
             .padding(vertical = 7.dp)
             .width(300.dp)
             .border(width = 2.dp, color = Color.Gray, shape = RoundedCornerShape(8.dp))
+            .clip(shape = RoundedCornerShape(8.dp))
     )
 }
 
